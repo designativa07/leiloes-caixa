@@ -35,15 +35,23 @@ export default async function PropertyDetailPage({
 
         <div className="detail-grid">
           <section className="detail-card main-detail-card" style={{ overflow: "hidden", padding: 0 }}>
-            <div className="detail-image-hero-wrapper" style={{ position: "relative", width: "100%", height: "350px" }}>
-              <PropertyImage
-                src={imageUrl}
-                alt={item.address}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                height="350px"
-              />
+            <div className="detail-image-hero-wrapper" style={{ position: "relative", width: "100%", height: "400px", background: "rgba(15, 23, 42, 0.6)", borderBottom: "1px solid var(--border)" }}>
+              <a
+                href={imageUrl}
+                target="_blank"
+                rel="noreferrer"
+                title="Clique para abrir a foto em tamanho real"
+                style={{ display: "block", width: "100%", height: "100%", cursor: "zoom-in" }}
+              >
+                <PropertyImage
+                  src={imageUrl}
+                  alt={item.address}
+                  style={{ width: "100%", height: "100%", objectFit: "contain", padding: "10px" }}
+                  height="400px"
+                />
+              </a>
               {Number(item.discountPercent) > 0 ? (
-                <span className="badge-discount-float" style={{ position: "absolute", bottom: 20, right: 20, zIndex: 10, fontSize: "1.1rem", padding: "8px 16px" }}>
+                <span className="badge-discount-float" style={{ position: "absolute", top: "auto", bottom: 20, right: 20, zIndex: 10, fontSize: "1.1rem", padding: "8px 16px", pointerEvents: "none" }}>
                   {formatPercent(Number(item.discountPercent))} ECONOMIA
                 </span>
               ) : null}

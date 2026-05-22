@@ -512,7 +512,7 @@ a {
 
 .property-table th,
 .property-table td {
-  padding: 16px 20px;
+  padding: 12px 14px;
   vertical-align: middle;
   border-bottom: 1px solid var(--border);
 }
@@ -538,8 +538,13 @@ a {
   border-bottom: 0;
 }
 
-.property-table strong {
+.property-table td strong {
   color: #fff;
+  display: block;
+  max-width: 320px;
+  white-space: normal;
+  word-wrap: break-word;
+  line-height: 1.4;
 }
 
 /* --- PAGINATION --- */

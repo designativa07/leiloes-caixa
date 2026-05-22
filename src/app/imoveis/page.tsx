@@ -39,6 +39,50 @@ export default async function PropertiesPage({
 
   const normalizedFilters = normalizeFilters(filters);
 
+  // Smart pagination logic
+  const currentPage = result.page;
+  const totalPages = result.totalPages;
+  const delta = 2; // Show 2 pages before and after current
+  const range: number[] = [];
+  for (
+    let i = Math.max(2, currentPage - delta);
+    i <= Math.min(totalPages - 1, currentPage + delta);
+    i++
+  ) {
+    range.push(i);
+  }
+
+  const pagesToShow: (number | "ellipsis")[] = [];
+  pagesToShow.push(1);
+
+  if (currentPage - delta > 2) {
+    pagesToShow.push("ellipsis");
+  }
+
+  pagesToShow.push(...range);
+
+  if (currentPage + delta < totalPages - 1) {
+    pagesToShow.push("ellipsis");
+  }
+
+  if (totalPages > 1) {
+    pagesToShow.push(totalPages);
+  }
+
+  const buildPageLink = (pageNumber: number) => {
+    return buildPageHref("/imoveis", {
+      search: normalizedFilters.search || undefined,
+      state: normalizedFilters.state || undefined,
+      city: normalizedFilters.city || undefined,
+      saleMode: normalizedFilters.saleMode || undefined,
+      financing: normalizedFilters.financing || undefined,
+      minPrice: normalizedFilters.minPrice || undefined,
+      maxPrice: normalizedFilters.maxPrice || undefined,
+      sort: normalizedFilters.sort || undefined,
+      page: String(pageNumber),
+    });
+  };
+
   return (
     <main className="page-shell">
       <div className="container">
@@ -97,31 +141,59 @@ export default async function PropertiesPage({
                 <PropertyTable items={result.items} />
               </div>
 
-              <nav className="pagination" aria-label="Paginacao">
-                {Array.from({ length: result.totalPages }, (_, index) => {
-                  const pageNumber = index + 1;
-                  const href = buildPageHref("/imoveis", {
-                    search: normalizedFilters.search || undefined,
-                    state: normalizedFilters.state || undefined,
-                    city: normalizedFilters.city || undefined,
-                    saleMode: normalizedFilters.saleMode || undefined,
-                    financing: normalizedFilters.financing || undefined,
-                    minPrice: normalizedFilters.minPrice || undefined,
-                    maxPrice: normalizedFilters.maxPrice || undefined,
-                    sort: normalizedFilters.sort || undefined,
-                    page: String(pageNumber),
-                  });
+              <nav className="pagination" aria-label="Paginacao" style={{ marginTop: 32, gap: 6 }}>
+                {currentPage > 1 && (
+                  <Link
+                    className="pagination-link"
+                    href={buildPageLink(currentPage - 1)}
+                    title="Página Anterior"
+                    style={{ padding: "0 14px", minWidth: "auto" }}
+                  >
+                    &larr; Ant
+                  </Link>
+                )}
+
+                {pagesToShow.map((page, idx) => {
+                  if (page === "ellipsis") {
+                    return (
+                      <span
+                        key={`ellipsis-${idx}`}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: "40px",
+                          height: "40px",
+                          color: "var(--text-muted)",
+                          fontWeight: 600,
+                        }}
+                      >
+                        ...
+                      </span>
+                    );
+                  }
 
                   return (
                     <Link
-                      key={pageNumber}
-                      className={`pagination-link ${pageNumber === result.page ? "active" : ""}`.trim()}
-                      href={href}
+                      key={page}
+                      className={`pagination-link ${page === currentPage ? "active" : ""}`.trim()}
+                      href={buildPageLink(page)}
                     >
-                      {pageNumber}
+                      {page}
                     </Link>
                   );
                 })}
+
+                {currentPage < totalPages && (
+                  <Link
+                    className="pagination-link"
+                    href={buildPageLink(currentPage + 1)}
+                    title="Próxima Página"
+                    style={{ padding: "0 14px", minWidth: "auto" }}
+                  >
+                    Próx &rarr;
+                  </Link>
+                )}
               </nav>
             </>
           )}

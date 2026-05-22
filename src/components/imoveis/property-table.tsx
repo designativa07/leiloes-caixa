@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { AuctionItem } from "@/generated/prisma/client";
 
-import { formatCurrency, formatFinancing, formatPercent } from "@/lib/format";
+import { formatCurrency, formatFinancing, formatPercent, getPropertyImage } from "@/lib/format";
+import { PropertyImage } from "@/components/imoveis/property-image";
 
 type PropertyTableProps = {
   items: AuctionItem[];
@@ -13,6 +14,7 @@ export function PropertyTable({ items }: PropertyTableProps) {
       <table className="property-table">
         <thead>
           <tr>
+            <th style={{ width: "140px" }}>Foto</th>
             <th>Imovel</th>
             <th>Cidade</th>
             <th>Preco</th>
@@ -25,6 +27,18 @@ export function PropertyTable({ items }: PropertyTableProps) {
         <tbody>
           {items.map((item) => (
             <tr key={item.id}>
+              <td>
+                <Link href={`/imoveis/${item.id}`}>
+                  <div style={{ width: "120px", height: "90px", overflow: "hidden", borderRadius: "12px", background: "rgba(255, 255, 255, 0.05)", position: "relative", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
+                    <PropertyImage
+                      src={getPropertyImage(item.externalId)}
+                      alt={item.address}
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      height="90px"
+                    />
+                  </div>
+                </Link>
+              </td>
               <td>
                 <strong>{item.address}</strong>
                 <div className="muted">{item.externalId}</div>
