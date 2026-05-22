@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { AuctionItem } from "@/generated/prisma/client";
 
-import { formatCurrency, formatFinancing, formatPercent, getPropertyImage } from "@/lib/format";
+import { buildPageHref, formatCurrency, formatFinancing, formatPercent, getPropertyImage } from "@/lib/format";
 import { PropertyImage } from "@/components/imoveis/property-image";
 
 type PropertyTableProps = {
