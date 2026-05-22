@@ -11,7 +11,7 @@ function buildAdminRedirect(request: Request, search: string) {
 
 export async function POST(request: Request) {
   try {
-    const csvPath = resolve(process.cwd(), "Lista_imoveisSC.csv");
+    const csvPath = resolve(process.cwd(), "Lista_imoveis_geral.csv");
     const result = await replaceCaixaAuctionItemsFromFile(csvPath);
 
     revalidatePath("/");

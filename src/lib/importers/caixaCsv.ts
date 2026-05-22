@@ -92,7 +92,7 @@ function normalizeFinancing(value: string) {
 }
 
 export async function parseCaixaCsvFile(filePath: string): Promise<ParsedAuctionItem[]> {
-  const fileContent = await readFile(filePath, "utf-8");
+  const fileContent = await readFile(filePath, "latin1");
   return parseCaixaCsvContent(fileContent);
 }
 

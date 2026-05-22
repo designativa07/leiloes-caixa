@@ -36,3 +36,10 @@ export function buildPageHref(
   const query = params.toString();
   return query ? `${pathname}?${query}` : pathname;
 }
+
+export function getPropertyImage(externalId: string): string {
+  const cleanedId = (externalId ?? "").trim();
+  // Pad standard externalIds with leading zeros to reach exactly 13 digits
+  const paddedId = cleanedId.padStart(13, "0");
+  return `https://venda-imoveis.caixa.gov.br/fotos/F${paddedId}21.jpg`;
+}

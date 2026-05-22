@@ -46,7 +46,7 @@ export default async function AdminPage({
             <Link className="button" href="/imoveis">
               Ver listagem
             </Link>
-            <Link className="button-secondary" href="/">
+            <Link className="button-secondary" href="/imoveis">
               Voltar ao inicio
             </Link>
           </div>
@@ -66,26 +66,37 @@ export default async function AdminPage({
             {status === "success" ? (
               <div className="status-success">
                 Importacao concluida com {importedCount} imoveis via{" "}
-                {source === "upload" ? "upload de arquivo" : "arquivo padrao do projeto"}.
+                {source === "upload"
+                  ? "upload de arquivo"
+                  : source === "download"
+                    ? "download online (Caixa Geral)"
+                    : "arquivo padrao local"}.
               </div>
             ) : status === "error" ? (
               <div className="status-info">
                 Selecione um arquivo CSV antes de usar a importacao por upload.
               </div>
             ) : status === "import-error" ? (
-              <div className="status-info">
-                {message ?? "Nao foi possivel importar o arquivo enviado."}
+              <div className="status-info" style={{ background: "#fdebeb", color: "#b42318" }}>
+                {message ?? "Nao foi possivel importar os dados."}
               </div>
             ) : (
               <div className="status-info">
-                Nenhuma importacao executada nesta sessao. Use o formulario abaixo quando quiser
-                atualizar os dados.
+                Nenhuma importacao executada nesta sessao. Use os controles abaixo para atualizar a base.
               </div>
             )}
 
-            <form action="/admin/import" encType="multipart/form-data" method="post">
+            <form action="/admin/download" method="post" style={{ marginBottom: 20 }}>
+              <div className="filters-actions">
+                <button className="filters-submit" type="submit" style={{ width: "100%", padding: "14px", fontSize: "1rem" }}>
+                  Baixar e Importar Lista Atualizada da Caixa (Online)
+                </button>
+              </div>
+            </form>
+
+            <form action="/admin/import" encType="multipart/form-data" method="post" style={{ borderTop: "1px solid var(--border)", paddingTop: 20 }}>
               <div className="field">
-                <label htmlFor="csvFile">Arquivo CSV da Caixa</label>
+                <label htmlFor="csvFile">Enviar arquivo CSV manualmente (Upload)</label>
                 <input accept=".csv,text/csv" id="csvFile" name="csvFile" type="file" />
               </div>
 
@@ -99,7 +110,7 @@ export default async function AdminPage({
             <form action="/admin/reimport" method="post" style={{ marginTop: 12 }}>
               <div className="filters-actions">
                 <button className="button-danger" type="submit">
-                  Reimportar arquivo padrao do projeto
+                  Reimportar arquivo padrao local (Lista_imoveis_geral.csv)
                 </button>
               </div>
             </form>

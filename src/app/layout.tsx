@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Leilões Caixa SC",
-  description: "Visualize imoveis de leilao da Caixa de forma simples e responsiva.",
+  title: "Portal de Leilões Caixa - Todos os Estados",
+  description: "Consulte e filtre de forma simples, rápida e responsiva milhares de imóveis em leilão da Caixa Econômica Federal em todo o Brasil.",
 };
 
 export default function RootLayout({
