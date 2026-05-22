@@ -78,7 +78,10 @@ export function buildAuctionItemWhere(filters: PropertyListFilters): Prisma.Auct
   }
 
   if (normalized.city) {
-    andFilters.push({ city: normalized.city });
+    const cities = normalized.city.split(",").map((c) => c.trim()).filter(Boolean);
+    if (cities.length > 0) {
+      andFilters.push({ city: { in: cities } });
+    }
   }
 
   if (normalized.state) {

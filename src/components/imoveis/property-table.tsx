@@ -6,9 +6,26 @@ import { PropertyImage } from "@/components/imoveis/property-image";
 
 type PropertyTableProps = {
   items: AuctionItem[];
+  filters: any;
 };
 
-export function PropertyTable({ items }: PropertyTableProps) {
+export function PropertyTable({ items, filters }: PropertyTableProps) {
+  const currentSort = filters.sort || "discount_desc";
+
+  const getSortHref = (targetSort: string) => {
+    return buildPageHref("/imoveis", {
+      ...filters,
+      sort: targetSort,
+      page: "1", // Reset to page 1 on sort change
+    });
+  };
+
+  const priceSort = currentSort === "price_asc" ? "price_desc" : "price_asc";
+  const priceArrow = currentSort === "price_asc" ? " ▲" : currentSort === "price_desc" ? " ▼" : "";
+
+  const discountSort = currentSort === "discount_desc" ? "discount_asc" : "discount_desc";
+  const discountArrow = currentSort === "discount_desc" ? " ▼" : currentSort === "discount_asc" ? " ▲" : "";
+
   return (
     <div className="table-wrap">
       <table className="property-table">
@@ -17,8 +34,34 @@ export function PropertyTable({ items }: PropertyTableProps) {
             <th style={{ width: "140px" }}>Foto</th>
             <th>Imovel</th>
             <th>Cidade</th>
-            <th>Preco</th>
-            <th>Desconto</th>
+            <th>
+              <Link
+                href={getSortHref(priceSort)}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  color: "inherit",
+                  textDecoration: "none",
+                  gap: "4px",
+                }}
+              >
+                Preço{priceArrow}
+              </Link>
+            </th>
+            <th>
+              <Link
+                href={getSortHref(discountSort)}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  color: "inherit",
+                  textDecoration: "none",
+                  gap: "4px",
+                }}
+              >
+                Desconto{discountArrow}
+              </Link>
+            </th>
             <th>Financia</th>
             <th>Modalidade</th>
             <th></th>

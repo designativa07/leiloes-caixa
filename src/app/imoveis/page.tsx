@@ -138,7 +138,7 @@ export default async function PropertiesPage({
               </div>
 
               <div className="desktop-only">
-                <PropertyTable items={result.items} />
+                <PropertyTable items={result.items} filters={normalizedFilters} />
               </div>
 
               <nav className="pagination" aria-label="Paginacao" style={{ marginTop: 32, gap: 6 }}>
