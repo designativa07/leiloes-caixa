@@ -125,9 +125,9 @@ export async function getPropertyFilterOptions() {
     }),
     db.auctionItem.findMany({
       where: { source: "caixa", category: "imovel" },
-      distinct: ["city"],
-      select: { city: true },
-      orderBy: { city: "asc" },
+      distinct: ["state", "city"],
+      select: { state: true, city: true },
+      orderBy: [{ state: "asc" }, { city: "asc" }],
     }),
     db.auctionItem.findMany({
       where: { source: "caixa", category: "imovel" },
@@ -139,7 +139,7 @@ export async function getPropertyFilterOptions() {
 
   return {
     states: states.map((item) => item.state),
-    cities: cities.map((item) => item.city),
+    cities: cities.map((item) => ({ state: item.state, city: item.city })),
     saleModes: saleModes.map((item) => item.saleMode),
   };
 }

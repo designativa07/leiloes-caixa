@@ -14,7 +14,7 @@ type FiltersProps = {
     sort: string;
   };
   states: string[];
-  cities: string[];
+  cities: { state: string; city: string }[];
   saleModes: string[];
 };
 
@@ -24,6 +24,8 @@ export function PropertyFilters({
   cities = [],
   saleModes = [],
 }: FiltersProps) {
+  const [selectedState, setSelectedState] = useState(filters.state || "");
+  
   const initialCities = filters.city
     ? filters.city.split(",").map((c) => c.trim()).filter(Boolean)
     : [];
@@ -33,15 +35,16 @@ export function PropertyFilters({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Sync selected cities when filters update (e.g. clicking global Clear/Limpar)
+  // Sync state and selected cities when filters update (e.g. clicking clear/limpar)
   useEffect(() => {
+    setSelectedState(filters.state || "");
     const nextCities = filters.city
       ? filters.city.split(",").map((c) => c.trim()).filter(Boolean)
       : [];
     setSelectedCities(nextCities);
-  }, [filters.city]);
+  }, [filters.state, filters.city]);
 
-  // Click outside to close dropdown panel
+  // Click outside listener to close dropdown panel
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -52,7 +55,31 @@ export function PropertyFilters({
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
 
-  const filteredCities = cities.filter((city) =>
+  // Handle state change: update cities and clear cities not in new state
+  const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newState = e.target.value;
+    setSelectedState(newState);
+    setCitySearch(""); // Clear city search text
+
+    if (newState) {
+      // Filter list of cities belonging to the new state
+      const stateCities = cities
+        .filter((item) => item.state === newState)
+        .map((item) => item.city);
+      
+      // Keep only selected cities that belong to the new state
+      setSelectedCities(selectedCities.filter((city) => stateCities.includes(city)));
+    } else {
+      // If state is cleared, we can keep selected cities
+    }
+  };
+
+  // Filter available cities by the selected state and the current search query
+  const availableCities = selectedState
+    ? cities.filter((item) => item.state === selectedState).map((item) => item.city)
+    : Array.from(new Set(cities.map((item) => item.city))).sort();
+
+  const filteredCities = availableCities.filter((city) =>
     (city ?? "").toLowerCase().includes(citySearch.toLowerCase())
   );
 
@@ -61,7 +88,9 @@ export function PropertyFilters({
       <div className="panel-header">
         <div>
           <h2 className="section-title">Busca e filtros</h2>
-          <div className="muted">Use apenas os filtros essenciais para encontrar oportunidades.</div>
+          <div className="muted" style={{ fontSize: "0.85rem", marginTop: "4px" }}>
+            Use os filtros essenciais para encontrar as melhores oportunidades de leilão.
+          </div>
         </div>
       </div>
 
@@ -72,13 +101,14 @@ export function PropertyFilters({
             defaultValue={filters.search}
             id="search"
             name="search"
-            placeholder="Cidade, bairro, endereco ou numero"
+            placeholder="Bairro, endereço ou número do imóvel"
+            style={{ fontSize: "0.88rem" }}
           />
         </div>
 
         <div className="field">
           <label htmlFor="state">Estado</label>
-          <select defaultValue={filters.state} id="state" name="state">
+          <select value={selectedState} id="state" name="state" onChange={handleStateChange} style={{ fontSize: "0.88rem" }}>
             <option value="">Todos</option>
             {states.map((state) => (
               <option key={state} value={state}>
@@ -96,15 +126,15 @@ export function PropertyFilters({
             style={{
               border: "1px solid var(--border)",
               borderRadius: "14px",
-              padding: "12px 16px",
+              padding: "11px 16px",
               background: "rgba(10, 15, 25, 0.8)",
               color: selectedCities.length > 0 ? "var(--text)" : "var(--text-soft)",
-              fontSize: "0.95rem",
+              fontSize: "0.88rem",
               cursor: "pointer",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              minHeight: "47px",
+              minHeight: "45px",
               transition: "border-color 0.25s",
             }}
             onMouseEnter={(e) => {
@@ -144,7 +174,7 @@ export function PropertyFilters({
             >
               <input
                 type="text"
-                placeholder="Pesquisar cidade..."
+                placeholder={selectedState ? `Filtrar cidades em ${selectedState}...` : "Pesquisar cidade..."}
                 value={citySearch}
                 onChange={(e) => setCitySearch(e.target.value)}
                 style={{
@@ -154,7 +184,7 @@ export function PropertyFilters({
                   padding: "8px 12px",
                   background: "rgba(10, 15, 25, 0.5)",
                   color: "#fff",
-                  fontSize: "0.9rem",
+                  fontSize: "0.85rem",
                   outline: "none",
                 }}
               />
@@ -164,13 +194,13 @@ export function PropertyFilters({
                   flexGrow: 1,
                   display: "flex",
                   flexDirection: "column",
-                  gap: "6px",
+                  gap: "4px",
                   paddingRight: "4px",
                   maxHeight: "180px",
                 }}
               >
                 {filteredCities.length === 0 ? (
-                  <div style={{ color: "var(--text-muted)", padding: "8px", fontSize: "0.9rem" }}>
+                  <div style={{ color: "var(--text-muted)", padding: "8px", fontSize: "0.85rem" }}>
                     Nenhuma cidade encontrada
                   </div>
                 ) : (
@@ -183,10 +213,10 @@ export function PropertyFilters({
                           display: "flex",
                           alignItems: "center",
                           gap: "10px",
-                          padding: "8px",
+                          padding: "6px 8px",
                           borderRadius: "8px",
                           cursor: "pointer",
-                          fontSize: "0.9rem",
+                          fontSize: "0.85rem",
                           transition: "background 0.2s",
                         }}
                         onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
@@ -205,8 +235,8 @@ export function PropertyFilters({
                           style={{
                             accentColor: "var(--primary)",
                             cursor: "pointer",
-                            width: "16px",
-                            height: "16px",
+                            width: "15px",
+                            height: "15px",
                           }}
                         />
                         <span>{city}</span>
@@ -224,7 +254,7 @@ export function PropertyFilters({
 
         <div className="field">
           <label htmlFor="saleMode">Modalidade</label>
-          <select defaultValue={filters.saleMode} id="saleMode" name="saleMode">
+          <select defaultValue={filters.saleMode} id="saleMode" name="saleMode" style={{ fontSize: "0.88rem" }}>
             <option value="">Todas</option>
             {saleModes.map((saleMode) => (
               <option key={saleMode} value={saleMode}>
@@ -236,7 +266,7 @@ export function PropertyFilters({
 
         <div className="field">
           <label htmlFor="financing">Financiamento</label>
-          <select defaultValue={filters.financing} id="financing" name="financing">
+          <select defaultValue={filters.financing} id="financing" name="financing" style={{ fontSize: "0.88rem" }}>
             <option value="">Todos</option>
             <option value="sim">Sim</option>
             <option value="nao">Nao</option>
@@ -244,18 +274,18 @@ export function PropertyFilters({
         </div>
 
         <div className="field">
-          <label htmlFor="minPrice">Preco minimo</label>
-          <input defaultValue={filters.minPrice} id="minPrice" name="minPrice" placeholder="100000" />
+          <label htmlFor="minPrice">Preço mínimo</label>
+          <input defaultValue={filters.minPrice} id="minPrice" name="minPrice" placeholder="100000" style={{ fontSize: "0.88rem" }} />
         </div>
 
         <div className="field">
-          <label htmlFor="maxPrice">Preco maximo</label>
-          <input defaultValue={filters.maxPrice} id="maxPrice" name="maxPrice" placeholder="500000" />
+          <label htmlFor="maxPrice">Preço máximo</label>
+          <input defaultValue={filters.maxPrice} id="maxPrice" name="maxPrice" placeholder="500000" style={{ fontSize: "0.88rem" }} />
         </div>
 
         <div className="field">
           <label htmlFor="sort">Ordenar por</label>
-          <select defaultValue={filters.sort} id="sort" name="sort">
+          <select defaultValue={filters.sort} id="sort" name="sort" style={{ fontSize: "0.88rem" }}>
             <option value="discount_desc">Maior desconto</option>
             <option value="discount_asc">Menor desconto</option>
             <option value="price_asc">Menor preco</option>
@@ -278,7 +308,7 @@ export function PropertyFilters({
               padding: "16px",
             }}
           >
-            <div style={{ width: "100%", fontSize: "0.8rem", fontWeight: 700, color: "var(--text-soft)", textTransform: "uppercase", letterSpacing: "0.03em", marginBottom: "4px" }}>
+            <div style={{ width: "100%", fontSize: "0.72rem", fontWeight: 700, color: "var(--text-soft)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>
               Cidades selecionadas:
             </div>
             {selectedCities.map((city) => (
@@ -291,9 +321,9 @@ export function PropertyFilters({
                   background: "var(--primary-soft)",
                   border: "1px solid rgba(59, 130, 246, 0.2)",
                   color: "#60a5fa",
-                  padding: "6px 12px",
+                  padding: "5px 12px",
                   borderRadius: "99px",
-                  fontSize: "0.85rem",
+                  fontSize: "0.8rem",
                   fontWeight: 600,
                 }}
               >
@@ -326,7 +356,7 @@ export function PropertyFilters({
                 background: "transparent",
                 border: "none",
                 color: "var(--text-muted)",
-                fontSize: "0.85rem",
+                fontSize: "0.8rem",
                 cursor: "pointer",
                 marginLeft: "auto",
                 textDecoration: "underline",
@@ -338,11 +368,11 @@ export function PropertyFilters({
         )}
       </div>
 
-      <div className="filters-actions">
-        <button className="filters-submit" type="submit">
+      <div className="filters-actions" style={{ marginTop: "28px", paddingTop: "20px" }}>
+        <button className="filters-submit" type="submit" style={{ fontSize: "0.88rem" }}>
           Aplicar filtros
         </button>
-        <a className="filters-clear" href="/imoveis">
+        <a className="filters-clear" href="/imoveis" style={{ fontSize: "0.88rem" }}>
           Limpar
         </a>
       </div>
