@@ -1,0 +1,25 @@
+node_modules
+# Keep environment variables out of version control
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Next.js build output
+.next/
+out/
+build/
+
+# IDE/System files
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Prisma generated client inside src/generated
+/src/generated/prisma
+/generated/prisma
+

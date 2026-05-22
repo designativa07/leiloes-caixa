@@ -1,0 +1,40 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model AuctionItem {
+  id             Int      @id @default(autoincrement())
+  source         String
+  category       String
+  externalId     String   @map("external_id")
+  state          String
+  city           String
+  district       String
+  address        String
+  price          Decimal  @db.Decimal(14, 2)
+  appraisalValue Decimal? @map("appraisal_value") @db.Decimal(14, 2)
+  discountPercent Decimal? @map("discount_percent") @db.Decimal(5, 2)
+  allowsFinancing Boolean  @default(false) @map("allows_financing")
+  description    String   @db.Text
+  saleMode       String   @map("sale_mode")
+  sourceUrl      String   @map("source_url") @db.Text
+  importBatch    String   @map("import_batch")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@unique([source, category, externalId])
+  @@index([city])
+  @@index([saleMode])
+  @@index([price])
+  @@map("auction_items")
+}
