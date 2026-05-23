@@ -40,7 +40,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
 
 # Startup script: push schema then start server
-RUN printf '#!/bin/sh\nset -e\necho "Running prisma db push..."\nnpx prisma db push --skip-generate\necho "Starting Next.js..."\nexec node_modules/.bin/next start\n' > /app/start.sh && \
+RUN printf '#!/bin/sh\nset -e\necho "Running prisma db push..."\nnpx prisma db push\necho "Starting Next.js..."\nexec node_modules/.bin/next start\n' > /app/start.sh && \
     chmod +x /app/start.sh
 
 USER nextjs
