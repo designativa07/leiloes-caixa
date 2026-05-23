@@ -27,32 +27,31 @@ async function replaceCaixaAuctionItems(
 ) {
   const importBatch = `caixa-import-${new Date().toISOString()}`;
 
-  // Split into chunks of 2000 to avoid exceeding the 65,535 parameter limit of PostgreSQL queries
-  const chunkSize = 2000;
-  const chunks: typeof items[] = [];
+  // Step 1: delete existing items (no transaction needed)
+  await db.auctionItem.deleteMany({
+    where: {
+      source: "caixa",
+      category: "imovel",
+    },
+  });
+
+  // Step 2: insert in chunks of 500 to avoid parameter limit and timeouts
+  const chunkSize = 500;
+  let totalInserted = 0;
+
   for (let i = 0; i < items.length; i += chunkSize) {
-    chunks.push(items.slice(i, i + chunkSize));
+    const chunk = items.slice(i, i + chunkSize);
+    await db.auctionItem.createMany({
+      data: chunk.map((item) => ({
+        ...item,
+        importBatch,
+      })),
+    });
+    totalInserted += chunk.length;
   }
 
-  await db.$transaction([
-    db.auctionItem.deleteMany({
-      where: {
-        source: "caixa",
-        category: "imovel",
-      },
-    }),
-    ...chunks.map((chunk) =>
-      db.auctionItem.createMany({
-        data: chunk.map((item) => ({
-          ...item,
-          importBatch,
-        })),
-      }),
-    ),
-  ]);
-
   return {
-    count: items.length,
+    count: totalInserted,
     importBatch,
   };
 }
