@@ -16,11 +16,6 @@ COPY . .
 RUN npx prisma generate
 
 ENV NEXT_TELEMETRY_DISABLED=1
-# DATABASE_URL is needed for Next.js build only if you use it at build time.
-# If you query the DB only at request time (server components), it's fine without it.
-ARG DATABASE_URL
-ENV DATABASE_URL=$DATABASE_URL
-
 RUN npm run build
 
 # ─── Stage 3: Runner ───────────────────────────────────────────────────────
@@ -33,12 +28,20 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Copy Next.js build + app files
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
-# Copy Prisma generated client (Prisma v7 outputs to src/generated, not node_modules/.prisma)
+# Copy Prisma files (schema + generated client + config)
 COPY --from=builder --chown=nextjs:nodejs /app/src/generated ./src/generated
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
+
+# Startup script: push schema then start server
+RUN printf '#!/bin/sh\nset -e\necho "Running prisma db push..."\nnpx prisma db push --skip-generate\necho "Starting Next.js..."\nexec node_modules/.bin/next start\n' > /app/start.sh && \
+    chmod +x /app/start.sh
 
 USER nextjs
 
@@ -46,4 +49,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+CMD ["/bin/sh", "/app/start.sh"]
