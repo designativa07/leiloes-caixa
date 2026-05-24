@@ -4,13 +4,13 @@ import { buildAuctionItemWhere } from "@/lib/auction-items";
 import { sendAlertEmail } from "@/lib/email";
 
 export async function replaceCaixaAuctionItemsFromFile(filePath: string) {
-  const items = await parseCaixaCsvFile(filePath);
-  return replaceCaixaAuctionItems(items);
+  const parsed = await parseCaixaCsvFile(filePath);
+  return replaceCaixaAuctionItems(parsed);
 }
 
 export async function replaceCaixaAuctionItemsFromContent(fileContent: string) {
-  const items = parseCaixaCsvContent(fileContent);
-  return replaceCaixaAuctionItems(items);
+  const parsed = parseCaixaCsvContent(fileContent);
+  return replaceCaixaAuctionItems(parsed);
 }
 
 export async function replaceCaixaAuctionItemsFromUrl(url: string) {
@@ -25,16 +25,15 @@ export async function replaceCaixaAuctionItemsFromUrl(url: string) {
 }
 
 async function replaceCaixaAuctionItems(
-  items: Awaited<ReturnType<typeof parseCaixaCsvFile>>,
+  parsed: { generatedAt: Date; items: Awaited<ReturnType<typeof parseCaixaCsvFile>>["items"] },
 ) {
+  const { generatedAt, items } = parsed;
   const importBatch = `caixa-import-${new Date().toISOString()}`;
 
-  // Step 1: delete existing items
   await db.auctionItem.deleteMany({
     where: { source: "caixa", category: "imovel" },
   });
 
-  // Step 2: insert in chunks of 500
   const chunkSize = 500;
   let totalInserted = 0;
 
@@ -46,14 +45,21 @@ async function replaceCaixaAuctionItems(
     totalInserted += chunk.length;
   }
 
-  // Step 3: send email alerts (non-blocking, don't fail import if email fails)
+  await db.importBatch.create({
+    data: {
+      source: "caixa",
+      generatedAt,
+      itemCount: totalInserted,
+    },
+  });
+
   try {
     await sendEmailAlerts();
   } catch (err) {
     console.error("Email alerts failed (non-fatal):", err);
   }
 
-  return { count: totalInserted, importBatch };
+  return { count: totalInserted, importBatch, generatedAt };
 }
 
 async function sendEmailAlerts() {

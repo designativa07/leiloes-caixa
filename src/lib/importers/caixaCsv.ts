@@ -2,6 +2,17 @@ import { parse } from "csv-parse/sync";
 import { z } from "zod";
 import { readFile } from "node:fs/promises";
 
+const GENERATED_AT_REGEX = /Data de gera[çc][ãa]o[^0-9]*?(\d{2})\/(\d{2})\/(\d{4})/i;
+
+function parseGeneratedAt(headerLine: string): Date {
+  const match = headerLine.match(GENERATED_AT_REGEX);
+  if (!match) {
+    throw new Error(`Cabecalho do CSV nao contem 'Data de geracao': ${headerLine.slice(0, 100)}`);
+  }
+  const [, day, month, year] = match;
+  return new Date(`${year}-${month}-${day}T00:00:00.000Z`);
+}
+
 const fieldLabels: Record<string, string> = {
   externalId: "numero do imovel",
   state: "UF",
@@ -91,21 +102,24 @@ function normalizeFinancing(value: string) {
   return normalizeText(value).toLowerCase() === "sim";
 }
 
-export async function parseCaixaCsvFile(filePath: string): Promise<ParsedAuctionItem[]> {
+export async function parseCaixaCsvFile(filePath: string): Promise<{ generatedAt: Date; items: ParsedAuctionItem[] }> {
   const fileContent = await readFile(filePath, "latin1");
   return parseCaixaCsvContent(fileContent);
 }
 
-export function parseCaixaCsvContent(fileContent: string): ParsedAuctionItem[] {
+export function parseCaixaCsvContent(fileContent: string): { generatedAt: Date; items: ParsedAuctionItem[] } {
   const rows = parse(fileContent, {
     delimiter: ";",
     relax_column_count: true,
     skip_empty_lines: false,
   }) as string[][];
 
+  const firstLine = rows[0]?.join(";") ?? "";
+  const generatedAt = parseGeneratedAt(firstLine);
+
   const dataRows = rows.slice(3).filter((row) => row.some((cell) => normalizeText(cell ?? "") !== ""));
 
-  return dataRows.map((row, index) => {
+  const items = dataRows.map((row, index) => {
     const record = Object.fromEntries(
       headers.map((header, headerIndex) => [header, normalizeText(row[headerIndex] ?? "")]),
     );
@@ -122,8 +136,8 @@ export function parseCaixaCsvContent(fileContent: string): ParsedAuctionItem[] {
     const validated = validation.data;
 
     return {
-      source: "caixa",
-      category: "imovel",
+      source: "caixa" as const,
+      category: "imovel" as const,
       externalId: validated.externalId,
       state: validated.state,
       city: validated.city,
@@ -138,4 +152,6 @@ export function parseCaixaCsvContent(fileContent: string): ParsedAuctionItem[] {
       sourceUrl: validated.sourceUrl,
     };
   });
+
+  return { generatedAt, items };
 }

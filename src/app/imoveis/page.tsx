@@ -3,7 +3,7 @@ import Link from "next/link";
 import { PropertyCard } from "@/components/imoveis/property-card";
 import { PropertyFilters } from "@/components/imoveis/filters";
 import { PropertyTable } from "@/components/imoveis/property-table";
-import { getPropertyFilterOptions, getPropertyList, getPropertySummary, hasActiveFilters, normalizeFilters } from "@/lib/auction-items";
+import { getLatestImportBatch, getPropertyFilterOptions, getPropertyList, getPropertySummary, hasActiveFilters, normalizeFilters } from "@/lib/auction-items";
 import { buildPageHref, formatCurrency } from "@/lib/format";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -31,10 +31,11 @@ export default async function PropertiesPage({
     page: getSingleValue(resolvedSearchParams.page),
   };
 
-  const [options, result, summary] = await Promise.all([
+  const [options, result, summary, latestBatch] = await Promise.all([
     getPropertyFilterOptions(),
     getPropertyList(filters),
     getPropertySummary(filters),
+    getLatestImportBatch(),
   ]);
 
   const normalizedFilters = normalizeFilters(filters);
@@ -91,6 +92,11 @@ export default async function PropertiesPage({
       <div className="container">
         <section className="hero">
           <span className="badge">Caixa Econômica Federal</span>
+          {latestBatch && (
+            <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.4)", marginTop: 8 }}>
+              Listagem atualizada em {new Date(latestBatch.generatedAt).toLocaleDateString("pt-BR")}
+            </div>
+          )}
           <h1>Painel de Oportunidades Caixa</h1>
           <p>
             Consulte milhares de imóveis de leilão em todo o Brasil com busca rápida, filtros essenciais e fotos reais do local direto do servidor da Caixa.

@@ -195,3 +195,10 @@ export function hasActiveFilters(filters: PropertyListFilters): boolean {
     n.search || n.state || n.city || n.saleMode || n.financing || n.minPrice || n.maxPrice,
   );
 }
+
+export async function getLatestImportBatch() {
+  return db.importBatch.findFirst({
+    where: { source: "caixa" },
+    orderBy: { createdAt: "desc" },
+  });
+}
