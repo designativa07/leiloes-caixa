@@ -4,7 +4,7 @@
   "private": true,
   "description": "MVP para visualizacao de imoveis de leilao da Caixa",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3060",
     "build": "next build",
     "start": "next start",
     "db:generate": "prisma generate",
