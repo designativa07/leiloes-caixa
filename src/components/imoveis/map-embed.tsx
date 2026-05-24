@@ -1,8 +1,11 @@
+"use client";
+
 type Props = {
   address: string;
   city: string;
   state: string;
 };
+
 
 export function MapEmbed({ address, city, state }: Props) {
   const query = encodeURIComponent(`${address}, ${city}, ${state}, Brasil`);
