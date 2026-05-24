@@ -106,6 +106,12 @@ model AuctionItem {
   saleMode        String     @map("sale_mode")
   sourceUrl       String     @map("source_url") @db.Text
   importBatch     String     @map("import_batch")
+  latitude        Float?
+  longitude       Float?
+  geocodedAt      DateTime?  @map("geocoded_at")
+  auctionDate     DateTime?  @map("auction_date")
+  auctionDateType String?    @map("auction_date_type")
+  scrapedAt       DateTime?  @map("scraped_at")
   createdAt       DateTime   @default(now()) @map("created_at")
   updatedAt       DateTime   @updatedAt @map("updated_at")
   favorites       Favorite[]
@@ -114,5 +120,17 @@ model AuctionItem {
   @@index([city])
   @@index([saleMode])
   @@index([price])
+  @@index([latitude, longitude])
+  @@index([auctionDate])
   @@map("auction_items")
+}
+
+model ImportBatch {
+  id          String   @id @default(cuid())
+  source      String
+  generatedAt DateTime @map("generated_at")
+  itemCount   Int      @map("item_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("import_batches")
 }
