@@ -6,6 +6,7 @@ import { formatCurrency, formatFinancing, formatPercent } from "@/lib/format";
 import { FavoriteButton } from "@/components/imoveis/favorite-button";
 import { PropertyGallery } from "@/components/imoveis/property-gallery";
 import { MapEmbed } from "@/components/imoveis/map-embed";
+import { BackButton } from "@/components/imoveis/back-button";
 
 type Params = Promise<{ id: string }>;
 
@@ -25,9 +26,7 @@ export default async function PropertyDetailPage({
   return (
     <main className="page-shell">
       <div className="container">
-        <Link className="back-link" href="/imoveis">
-          &larr; Voltar para a listagem de imóveis
-        </Link>
+        <BackButton />
 
         <div className="detail-grid">
           {/* ── Main card ── */}
