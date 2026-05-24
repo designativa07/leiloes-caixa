@@ -81,7 +81,7 @@ export async function sendAlertEmail({
   }
 
   return resend.emails.send({
-    from: "Leilões Caixa <alertas@leilaoscaixa.com.br>",
+    from: "Leilões Caixa <alertas@designa.tec.br>",
     to,
     subject: `🏠 ${matchCount} novo${matchCount > 1 ? "s imóveis" : " imóvel"} para "${searchName}"`,
     html,

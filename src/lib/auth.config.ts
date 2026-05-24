@@ -3,6 +3,7 @@ import Google from "next-auth/providers/google";
 
 // Edge-compatible config (no Prisma, no Node.js modules)
 export const authConfig = {
+  trustHost: true, // required behind Coolify/Traefik reverse proxy
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
