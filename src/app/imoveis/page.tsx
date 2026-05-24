@@ -3,7 +3,7 @@ import Link from "next/link";
 import { PropertyCard } from "@/components/imoveis/property-card";
 import { PropertyFilters } from "@/components/imoveis/filters";
 import { PropertyTable } from "@/components/imoveis/property-table";
-import { getPropertyFilterOptions, getPropertyList, getPropertySummary, normalizeFilters } from "@/lib/auction-items";
+import { getPropertyFilterOptions, getPropertyList, getPropertySummary, hasActiveFilters, normalizeFilters } from "@/lib/auction-items";
 import { buildPageHref, formatCurrency } from "@/lib/format";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -34,10 +34,13 @@ export default async function PropertiesPage({
   const [options, result, summary] = await Promise.all([
     getPropertyFilterOptions(),
     getPropertyList(filters),
-    getPropertySummary(),
+    getPropertySummary(filters),
   ]);
 
   const normalizedFilters = normalizeFilters(filters);
+  const filtersActive = hasActiveFilters(filters);
+  const totalLabel = filtersActive ? "Resultados encontrados" : "Total de Imóveis";
+  const cheapestLabel = filtersActive ? "Menor preço (filtros)" : "A partir de";
 
   // Smart pagination logic
   const currentPage = result.page;
@@ -95,12 +98,12 @@ export default async function PropertiesPage({
           
           <div className="stats-grid" style={{ marginTop: 24, marginBottom: 8 }}>
             <div className="stat-card" style={{ background: "rgba(255, 255, 255, 0.06)", border: "1px solid rgba(255, 255, 255, 0.1)" }}>
-              <div className="muted" style={{ color: "rgba(255, 255, 255, 0.7)" }}>Total de Imóveis</div>
+              <div className="muted" style={{ color: "rgba(255, 255, 255, 0.7)" }}>{totalLabel}</div>
               <h2 style={{ margin: "8px 0 0", fontSize: "1.8rem" }}>{summary.count.toLocaleString("pt-BR")}</h2>
             </div>
 
             <div className="stat-card" style={{ background: "rgba(255, 255, 255, 0.06)", border: "1px solid rgba(255, 255, 255, 0.1)" }}>
-              <div className="muted" style={{ color: "rgba(255, 255, 255, 0.7)" }}>A partir de</div>
+              <div className="muted" style={{ color: "rgba(255, 255, 255, 0.7)" }}>{cheapestLabel}</div>
               <h2 style={{ margin: "8px 0 0", fontSize: "1.8rem" }}>
                 {summary.cheapestPrice ? formatCurrency(summary.cheapestPrice) : "-"}
               </h2>

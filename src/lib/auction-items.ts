@@ -169,13 +169,15 @@ export async function getPropertyList(filters: PropertyListFilters) {
   };
 }
 
-export async function getPropertySummary() {
+export async function getPropertySummary(filters?: PropertyListFilters) {
+  const where = filters
+    ? buildAuctionItemWhere(filters)
+    : { source: "caixa", category: "imovel" };
+
   const [count, cheapest] = await Promise.all([
-    db.auctionItem.count({
-      where: { source: "caixa", category: "imovel" },
-    }),
+    db.auctionItem.count({ where }),
     db.auctionItem.findFirst({
-      where: { source: "caixa", category: "imovel" },
+      where,
       orderBy: { price: "asc" },
       select: { price: true },
     }),
@@ -185,4 +187,11 @@ export async function getPropertySummary() {
     count,
     cheapestPrice: cheapest?.price ? Number(cheapest.price) : null,
   };
+}
+
+export function hasActiveFilters(filters: PropertyListFilters): boolean {
+  const n = normalizeFilters(filters);
+  return Boolean(
+    n.search || n.state || n.city || n.saleMode || n.financing || n.minPrice || n.maxPrice,
+  );
 }
