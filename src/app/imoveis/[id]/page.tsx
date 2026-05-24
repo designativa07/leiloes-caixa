@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { formatCurrency, formatFinancing, formatPercent, getPropertyImage } from "@/lib/format";
 import { PropertyImage } from "@/components/imoveis/property-image";
+import { FavoriteButton } from "@/components/imoveis/favorite-button";
 
 type Params = Promise<{ id: string }>;
 
@@ -58,11 +59,14 @@ export default async function PropertyDetailPage({
             </div>
 
             <div style={{ padding: "30px" }}>
-              <div className="detail-badges" style={{ marginBottom: 16 }}>
-                <span className="badge badge-state">{item.state}</span>
-                <span className="badge">{item.city}</span>
-                <span className="badge">{item.district}</span>
-                <span className="badge">{item.saleMode}</span>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px", marginBottom: 16 }}>
+                <div className="detail-badges" style={{ marginBottom: 0 }}>
+                  <span className="badge badge-state">{item.state}</span>
+                  <span className="badge">{item.city}</span>
+                  <span className="badge">{item.district}</span>
+                  <span className="badge">{item.saleMode}</span>
+                </div>
+                <FavoriteButton itemId={item.id} size="lg" />
               </div>
 
               <h1 className="detail-title" style={{ fontSize: "2rem", marginBottom: 10, lineHeight: 1.3 }}>{item.address}</h1>

@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -12,25 +10,105 @@ datasource db {
   provider = "postgresql"
 }
 
+// ─── Auth models (NextAuth.js) ─────────────────────────────────────────────
+
+model User {
+  id            String        @id @default(cuid())
+  name          String?
+  email         String        @unique
+  emailVerified DateTime?     @map("email_verified")
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  favorites     Favorite[]
+  savedSearches SavedSearch[]
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Account {
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─── App models ────────────────────────────────────────────────────────────
+
+model Favorite {
+  id            Int         @id @default(autoincrement())
+  userId        String      @map("user_id")
+  auctionItemId Int         @map("auction_item_id")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  auctionItem   AuctionItem @relation(fields: [auctionItemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, auctionItemId])
+  @@map("favorites")
+}
+
+model SavedSearch {
+  id        Int      @id @default(autoincrement())
+  userId    String   @map("user_id")
+  name      String
+  filters   Json
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("saved_searches")
+}
+
 model AuctionItem {
-  id             Int      @id @default(autoincrement())
-  source         String
-  category       String
-  externalId     String   @map("external_id")
-  state          String
-  city           String
-  district       String
-  address        String
-  price          Decimal  @db.Decimal(14, 2)
-  appraisalValue Decimal? @map("appraisal_value") @db.Decimal(14, 2)
-  discountPercent Decimal? @map("discount_percent") @db.Decimal(5, 2)
-  allowsFinancing Boolean  @default(false) @map("allows_financing")
-  description    String   @db.Text
-  saleMode       String   @map("sale_mode")
-  sourceUrl      String   @map("source_url") @db.Text
-  importBatch    String   @map("import_batch")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  id              Int        @id @default(autoincrement())
+  source          String
+  category        String
+  externalId      String     @map("external_id")
+  state           String
+  city            String
+  district        String
+  address         String
+  price           Decimal    @db.Decimal(14, 2)
+  appraisalValue  Decimal?   @map("appraisal_value") @db.Decimal(14, 2)
+  discountPercent Decimal?   @map("discount_percent") @db.Decimal(5, 2)
+  allowsFinancing Boolean    @default(false) @map("allows_financing")
+  description     String     @db.Text
+  saleMode        String     @map("sale_mode")
+  sourceUrl       String     @map("source_url") @db.Text
+  importBatch     String     @map("import_batch")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  favorites       Favorite[]
 
   @@unique([source, category, externalId])
   @@index([city])

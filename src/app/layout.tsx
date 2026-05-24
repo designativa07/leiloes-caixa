@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-
 import "./globals.css";
+import { Providers } from "@/components/layout/providers";
+import { Header } from "@/components/layout/header";
 
 export const metadata: Metadata = {
   title: "Portal de Leilões Caixa - Todos os Estados",
@@ -14,7 +15,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body>{children}</body>
+      <body>
+        <Providers>
+          <Header />
+          {children}
+        </Providers>
+      </body>
     </html>
   );
 }
