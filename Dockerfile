@@ -39,6 +39,12 @@ COPY --from=builder --chown=nextjs:nodejs /app/src/generated ./src/generated
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
 
+# Copy cron scripts + their dependencies (needed for scheduled tasks)
+# tsx scripts/*.ts referenciam @/lib/* — precisam de src/lib + tsconfig
+COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
+COPY --from=builder --chown=nextjs:nodejs /app/src/lib ./src/lib
+COPY --from=builder --chown=nextjs:nodejs /app/tsconfig.json ./tsconfig.json
+
 # Startup script: push schema then start server
 RUN printf '#!/bin/sh\nset -e\necho "Running prisma db push..."\nnpx prisma db push\necho "Starting Next.js..."\nexec node_modules/.bin/next start\n' > /app/start.sh && \
     chmod +x /app/start.sh
