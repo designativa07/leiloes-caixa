@@ -1,9 +1,14 @@
+import { exec } from "node:child_process";
+import { promisify } from "node:util";
+
 import { db } from "../src/lib/db";
 import { extractAuctionInfo, isContinuousSaleMode } from "./auction-date-parser";
 
-const THROTTLE_MS = 500;
+const execAsync = promisify(exec);
+
+const THROTTLE_MS = 800;
 const BATCH_SIZE = 100;
-const USER_AGENT = "leilaodb/1.0 (contato@designa.tec.br)";
+const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
 
 async function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
@@ -12,13 +17,22 @@ async function sleep(ms: number) {
 async function fetchWithRetry(url: string, retries = 3): Promise<string | null> {
   for (let i = 0; i < retries; i++) {
     try {
-      const response = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
-      if (response.ok) return await response.text();
-      if (response.status === 429 || response.status === 503) {
-        await sleep(2000 * Math.pow(2, i));
+      const { stdout } = await execAsync(
+        `curl -s -L -A "${USER_AGENT}" --max-time 15 "${url}"`,
+        { maxBuffer: 5 * 1024 * 1024 },
+      );
+
+      if (!stdout || stdout.length < 500) {
+        if (i < retries - 1) await sleep(2000 * Math.pow(2, i));
         continue;
       }
-      return null;
+
+      if (stdout.includes("Radware Bot Manager") || stdout.includes("CAPTCHA")) {
+        if (i < retries - 1) await sleep(3000 * Math.pow(2, i));
+        continue;
+      }
+
+      return stdout;
     } catch {
       if (i === retries - 1) return null;
       await sleep(2000 * Math.pow(2, i));
