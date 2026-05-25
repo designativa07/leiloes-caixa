@@ -1,3 +1,16 @@
+// EXPERIMENTAL — atualmente nao funciona em producao.
+//
+// A Caixa protege as paginas de detalhe com Radware Bot Manager (anti-bot CAPTCHA)
+// que detecta TLS fingerprint e bloqueia tanto fetch() do Node quanto curl direto.
+// Sem Puppeteer/Playwright (ou servico pago tipo ScrapingBee), nao ha como extrair
+// as datas de 1o/2o Leilao das paginas de detalhe.
+//
+// Para marcar "Venda Direta Online" como contínua (operacao que NAO precisa de fetch),
+// use `npm run mark:continuous` no lugar deste script.
+//
+// Este arquivo fica como referencia caso a estrategia anti-bot da Caixa mude
+// ou alguem adicione Puppeteer no futuro.
+
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
 

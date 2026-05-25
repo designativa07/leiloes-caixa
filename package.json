@@ -12,6 +12,7 @@
     "db:studio": "prisma studio",
     "import:caixa": "tsx scripts/import-caixa.ts",
     "geocode": "tsx scripts/geocode-cities.ts",
+    "mark:continuous": "tsx scripts/mark-continuous-sales.ts",
     "scrape:dates": "tsx scripts/scrape-auction-dates.ts"
   },
   "keywords": [],

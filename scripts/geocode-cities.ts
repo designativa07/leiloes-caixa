@@ -3,9 +3,8 @@ import { resolve } from "node:path";
 
 import { db } from "../src/lib/db";
 
-const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
-const USER_AGENT = "leilaodb/1.0 (contato@designa.tec.br)";
-const THROTTLE_MS = 1100;
+const PHOTON_URL = "https://photon.komoot.io/api/";
+const THROTTLE_MS = 200;
 const CACHE_PATH = resolve(process.cwd(), "scripts/city-coords.json");
 
 type Coord = { lat: number; lon: number };
@@ -28,17 +27,25 @@ async function saveCache(cache: Cache) {
   await writeFile(CACHE_PATH, JSON.stringify(cache, null, 2), "utf8");
 }
 
+type PhotonResponse = {
+  features?: Array<{
+    properties?: { countrycode?: string; type?: string };
+    geometry?: { coordinates?: [number, number] };
+  }>;
+};
+
 async function geocodeCity(state: string, city: string): Promise<Coord | null> {
   const q = `${city}, ${state}, Brasil`;
-  const url = `${NOMINATIM_URL}?q=${encodeURIComponent(q)}&format=json&limit=1&countrycodes=br`;
+  const url = `${PHOTON_URL}?q=${encodeURIComponent(q)}&limit=1`;
 
   try {
-    const response = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
+    const response = await fetch(url);
     if (!response.ok) return null;
-    const data = (await response.json()) as { lat: string; lon: string }[];
-    if (data.length === 0) return null;
-    const lat = parseFloat(data[0].lat);
-    const lon = parseFloat(data[0].lon);
+    const data = (await response.json()) as PhotonResponse;
+    const feature = data.features?.[0];
+    const coords = feature?.geometry?.coordinates;
+    if (!coords || coords.length !== 2) return null;
+    const [lon, lat] = coords;
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
     return { lat, lon };
   } catch {
