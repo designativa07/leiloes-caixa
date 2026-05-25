@@ -10,7 +10,8 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "import:caixa": "tsx scripts/import-caixa.ts"
+    "import:caixa": "tsx scripts/import-caixa.ts",
+    "geocode": "tsx scripts/geocode-properties.ts"
   },
   "keywords": [],
   "author": "",
