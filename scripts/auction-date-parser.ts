@@ -1,7 +1,7 @@
-const DATE_PATTERN = String.raw`(\d{2})\/(\d{2})\/(\d{4})(?:[^0-9]+(?:às\s+)?(\d{1,2}):(\d{2}))?`;
-const PRACA_1_REGEX = new RegExp(`1[ªa]\\s*Pra[çc]a[^0-9]*?${DATE_PATTERN}`, "i");
-const PRACA_2_REGEX = new RegExp(`2[ªa]\\s*Pra[çc]a[^0-9]*?${DATE_PATTERN}`, "i");
-const LICITACAO_REGEX = new RegExp(`(?:prazo\\s+final|encerramento|fim\\s+do\\s+prazo)[^0-9]*?${DATE_PATTERN}`, "i");
+const DATE_PATTERN = String.raw`(\d{2})\/(\d{2})\/(\d{4})\s*-\s*(\d{1,2})h(\d{2})`;
+const LEILAO_1_REGEX = new RegExp(`Data\\s+do\\s+1[ºo]\\s*Leil[ãa]o\\s*-\\s*${DATE_PATTERN}`, "i");
+const LEILAO_2_REGEX = new RegExp(`Data\\s+do\\s+2[ºo]\\s*Leil[ãa]o\\s*-\\s*${DATE_PATTERN}`, "i");
+const LICITACAO_REGEX = new RegExp(`Data\\s+da\\s+Licita[çc][ãa]o\\s+Aberta\\s*-\\s*${DATE_PATTERN}`, "i");
 
 export type AuctionInfo = { date: Date | null; type: string | null };
 
@@ -20,8 +20,8 @@ function buildDate(match: RegExpMatchArray): Date {
 }
 
 export function extractAuctionInfo(html: string, now: Date = new Date()): AuctionInfo {
-  const m1 = html.match(PRACA_1_REGEX);
-  const m2 = html.match(PRACA_2_REGEX);
+  const m1 = html.match(LEILAO_1_REGEX);
+  const m2 = html.match(LEILAO_2_REGEX);
 
   if (m1) {
     const date1 = buildDate(m1);
