@@ -7,6 +7,7 @@ import { FavoriteButton } from "@/components/imoveis/favorite-button";
 import { PropertyGallery } from "@/components/imoveis/property-gallery";
 import { MapEmbed } from "@/components/imoveis/map-embed";
 import { BackButton } from "@/components/imoveis/back-button";
+import { AuctionDateCard } from "@/components/imoveis/auction-date-card";
 
 type Params = Promise<{ id: string }>;
 
@@ -100,6 +101,12 @@ export default async function PropertyDetailPage({
 
           {/* ── Sidebar ── */}
           <aside className="detail-sidebar">
+            <AuctionDateCard
+              auctionDate={item.auctionDate}
+              auctionDateType={item.auctionDateType}
+              saleMode={item.saleMode}
+            />
+
             <section className="detail-card">
               <h2 className="section-title">Resumo</h2>
               <div className="detail-list">
