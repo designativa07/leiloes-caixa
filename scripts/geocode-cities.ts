@@ -1,117 +1,92 @@
-import { readFile, writeFile } from "node:fs/promises";
+// Geocoda imoveis usando dataset IBGE (5570 municipios brasileiros, offline).
+// Instantaneo, sem rate-limit. Idempotente: pode rodar varias vezes.
+
+import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 import { db } from "../src/lib/db";
 
-const PHOTON_URL = "https://photon.komoot.io/api/";
-const THROTTLE_MS = 200;
-const CACHE_PATH = resolve(process.cwd(), "scripts/city-coords.json");
+const IBGE_PATH = resolve(process.cwd(), "scripts/ibge-municipios.json");
 
-type Coord = { lat: number; lon: number };
-type Cache = Record<string, Coord | null>;
-
-function cityKey(state: string, city: string) {
-  return `${state}|${city}`;
-}
-
-async function loadCache(): Promise<Cache> {
-  try {
-    const raw = await readFile(CACHE_PATH, "utf8");
-    return JSON.parse(raw) as Cache;
-  } catch {
-    return {};
-  }
-}
-
-async function saveCache(cache: Cache) {
-  await writeFile(CACHE_PATH, JSON.stringify(cache, null, 2), "utf8");
-}
-
-type PhotonResponse = {
-  features?: Array<{
-    properties?: { countrycode?: string; type?: string };
-    geometry?: { coordinates?: [number, number] };
-  }>;
+type IbgeMunicipio = {
+  nome: string;
+  latitude: number;
+  longitude: number;
+  codigo_uf: number;
 };
 
-async function geocodeCity(state: string, city: string): Promise<Coord | null> {
-  const q = `${city}, ${state}, Brasil`;
-  const url = `${PHOTON_URL}?q=${encodeURIComponent(q)}&limit=1`;
+const UF_CODE_TO_LETTER: Record<number, string> = {
+  11: "RO", 12: "AC", 13: "AM", 14: "RR", 15: "PA", 16: "AP", 17: "TO",
+  21: "MA", 22: "PI", 23: "CE", 24: "RN", 25: "PB", 26: "PE", 27: "AL", 28: "SE", 29: "BA",
+  31: "MG", 32: "ES", 33: "RJ", 35: "SP",
+  41: "PR", 42: "SC", 43: "RS",
+  50: "MS", 51: "MT", 52: "GO", 53: "DF",
+};
 
-  try {
-    const response = await fetch(url);
-    if (!response.ok) return null;
-    const data = (await response.json()) as PhotonResponse;
-    const feature = data.features?.[0];
-    const coords = feature?.geometry?.coordinates;
-    if (!coords || coords.length !== 2) return null;
-    const [lon, lat] = coords;
-    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
-    return { lat, lon };
-  } catch {
-    return null;
-  }
+function normalize(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toUpperCase()
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-async function sleep(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
+async function loadIbgeIndex(): Promise<Map<string, { lat: number; lon: number }>> {
+  const raw = await readFile(IBGE_PATH, "utf8");
+  const cleaned = raw.replace(/^﻿/, "");
+  const data = JSON.parse(cleaned) as IbgeMunicipio[];
+
+  const index = new Map<string, { lat: number; lon: number }>();
+  for (const m of data) {
+    const uf = UF_CODE_TO_LETTER[m.codigo_uf];
+    if (!uf) continue;
+    const key = `${uf}|${normalize(m.nome)}`;
+    index.set(key, { lat: m.latitude, lon: m.longitude });
+  }
+  return index;
 }
 
 async function main() {
+  console.log("Carregando base IBGE...");
+  const ibge = await loadIbgeIndex();
+  console.log(`Base IBGE: ${ibge.size} municipios indexados.`);
+
   const cities = await db.auctionItem.findMany({
     where: { source: "caixa", category: "imovel" },
     distinct: ["state", "city"],
     select: { state: true, city: true },
   });
-  console.log(`Cidades únicas: ${cities.length}`);
+  console.log(`Cidades unicas nos imoveis: ${cities.length}`);
 
-  const cache = await loadCache();
-  const cacheCount = Object.keys(cache).length;
-  console.log(`Cache atual: ${cacheCount} cidades`);
-
-  let geocoded = 0;
-  let failed = 0;
-  let fromCache = 0;
-  let updated = 0;
+  let matched = 0;
+  let notFound = 0;
+  let totalUpdated = 0;
+  const missing: string[] = [];
 
   for (const { state, city } of cities) {
-    const key = cityKey(state, city);
+    const key = `${state}|${normalize(city)}`;
+    const coord = ibge.get(key);
 
-    let coord = cache[key];
-
-    if (coord === undefined) {
-      coord = await geocodeCity(state, city);
-      cache[key] = coord;
-      if (geocoded % 25 === 0) await saveCache(cache);
-      if (coord) {
-        geocoded++;
-      } else {
-        failed++;
-      }
-      await sleep(THROTTLE_MS);
-    } else {
-      fromCache++;
+    if (!coord) {
+      notFound++;
+      if (missing.length < 20) missing.push(`${state}/${city}`);
+      continue;
     }
 
-    if (coord) {
-      const result = await db.auctionItem.updateMany({
-        where: { source: "caixa", category: "imovel", state, city },
-        data: { latitude: coord.lat, longitude: coord.lon, geocodedAt: new Date() },
-      });
-      updated += result.count;
-    }
-
-    const total = geocoded + failed + fromCache;
-    if (total % 25 === 0) {
-      console.log(`Processadas ${total}/${cities.length} cidades (geocoded: ${geocoded}, cache: ${fromCache}, falhas: ${failed}, imóveis atualizados: ${updated})`);
-    }
+    matched++;
+    const result = await db.auctionItem.updateMany({
+      where: { source: "caixa", category: "imovel", state, city },
+      data: { latitude: coord.lat, longitude: coord.lon, geocodedAt: new Date() },
+    });
+    totalUpdated += result.count;
   }
 
-  await saveCache(cache);
-
-  console.log(`\nFinalizado.`);
-  console.log(`Cidades: ${cities.length} (geocoded agora: ${geocoded}, do cache: ${fromCache}, falhas: ${failed})`);
-  console.log(`Imóveis atualizados: ${updated}`);
+  console.log(`\nMatched: ${matched}/${cities.length} cidades (${((matched / cities.length) * 100).toFixed(1)}%)`);
+  console.log(`Imoveis atualizados: ${totalUpdated}`);
+  if (notFound > 0) {
+    console.log(`Nao encontradas: ${notFound} (exemplos: ${missing.slice(0, 10).join(", ")})`);
+  }
 }
 
 main().catch((e) => { console.error(e); process.exit(1); }).finally(() => db.$disconnect());
