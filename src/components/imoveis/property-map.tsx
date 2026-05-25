@@ -35,11 +35,6 @@ export function PropertyMap({ items, truncated, totalWithCoords }: Props) {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       }).addTo(map);
 
-      if (items.length === 0) {
-        map.setView([-14.235, -51.9253], 4);
-        return;
-      }
-
       const cluster = (L as unknown as { markerClusterGroup: () => LType.LayerGroup }).markerClusterGroup();
 
       const markers = items.map((item) => {
@@ -88,23 +83,30 @@ export function PropertyMap({ items, truncated, totalWithCoords }: Props) {
           fontSize: "0.85rem",
           marginBottom: 12,
         }}>
-          Mostrando 2000 de {totalWithCoords.toLocaleString("pt-BR")} imóveis no mapa. Refine os filtros para ver todos.
+          Mostrando {items.length.toLocaleString("pt-BR")} de {totalWithCoords.toLocaleString("pt-BR")} imóveis no mapa. Refine os filtros para ver todos.
         </div>
       )}
-      <div
-        ref={containerRef}
-        style={{
-          width: "100%",
-          height: "600px",
+      {items.length === 0 ? (
+        <div className="muted" style={{
+          textAlign: "center",
+          padding: "60px 20px",
+          background: "rgba(255,255,255,0.02)",
+          border: "1px dashed rgba(255,255,255,0.08)",
           borderRadius: "16px",
-          overflow: "hidden",
-          border: "1px solid rgba(255,255,255,0.07)",
-        }}
-      />
-      {items.length === 0 && (
-        <div className="muted" style={{ marginTop: 12, textAlign: "center" }}>
+        }}>
           Nenhum imóvel com coordenadas para os filtros atuais. O geocoding pode ainda estar em andamento.
         </div>
+      ) : (
+        <div
+          ref={containerRef}
+          style={{
+            width: "100%",
+            height: "600px",
+            borderRadius: "16px",
+            overflow: "hidden",
+            border: "1px solid rgba(255,255,255,0.07)",
+          }}
+        />
       )}
     </div>
   );
