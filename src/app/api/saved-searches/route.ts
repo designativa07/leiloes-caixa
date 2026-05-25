@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { buildAuctionItemWhere, type PropertyListFilters } from "@/lib/auction-items";
 import { NextResponse } from "next/server";
 
 // GET /api/saved-searches
@@ -38,6 +39,24 @@ export async function POST(req: Request) {
       filters,
     },
   });
+
+  // Seed: marca todos os imoveis que ja batem com os filtros como "vistos",
+  // para que o proximo email so contenha imoveis realmente novos.
+  const where = buildAuctionItemWhere(filters as PropertyListFilters);
+  const currentMatches = await db.auctionItem.findMany({
+    where,
+    select: { externalId: true },
+  });
+
+  if (currentMatches.length > 0) {
+    await db.savedSearchSeen.createMany({
+      data: currentMatches.map((m) => ({
+        savedSearchId: search.id,
+        externalId: m.externalId,
+      })),
+      skipDuplicates: true,
+    });
+  }
 
   return NextResponse.json(search, { status: 201 });
 }

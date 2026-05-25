@@ -76,15 +76,35 @@ async function sendEmailAlerts() {
       const filters = search.filters as Record<string, string>;
       const where = buildAuctionItemWhere(filters);
 
-      const matchCount = await db.auctionItem.count({ where });
-      if (matchCount === 0) return;
+      const currentMatches = await db.auctionItem.findMany({
+        where,
+        select: { externalId: true },
+      });
+      if (currentMatches.length === 0) return;
+
+      const seenRecords = await db.savedSearchSeen.findMany({
+        where: { savedSearchId: search.id },
+        select: { externalId: true },
+      });
+      const seenSet = new Set(seenRecords.map((r) => r.externalId));
+
+      const newMatches = currentMatches.filter((m) => !seenSet.has(m.externalId));
+      if (newMatches.length === 0) return;
 
       await sendAlertEmail({
         to: search.user.email,
         userName: search.user.name ?? "",
         searchName: search.name,
-        matchCount,
+        matchCount: newMatches.length,
         filters,
+      });
+
+      await db.savedSearchSeen.createMany({
+        data: newMatches.map((m) => ({
+          savedSearchId: search.id,
+          externalId: m.externalId,
+        })),
+        skipDuplicates: true,
       });
     }),
   );

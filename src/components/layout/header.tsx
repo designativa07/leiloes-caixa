@@ -49,19 +49,35 @@ export function Header() {
           </Link>
 
           {session && (
-            <Link href="/favoritos" style={{
-              color: "rgba(255,255,255,0.6)", fontSize: "0.9rem", fontWeight: 600,
-              padding: "6px 12px", borderRadius: "10px", transition: "all 0.2s",
-              display: "flex", alignItems: "center", gap: "6px",
-            }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = "#ef4444"; e.currentTarget.style.background = "rgba(239,68,68,0.08)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.6)"; e.currentTarget.style.background = "transparent"; }}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ width: 16, height: 16 }}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-              </svg>
-              Favoritos
-            </Link>
+            <>
+              <Link href="/buscas-salvas" style={{
+                color: "rgba(255,255,255,0.6)", fontSize: "0.9rem", fontWeight: 600,
+                padding: "6px 12px", borderRadius: "10px", transition: "all 0.2s",
+                display: "flex", alignItems: "center", gap: "6px",
+              }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = "#22c55e"; e.currentTarget.style.background = "rgba(34,197,94,0.08)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.6)"; e.currentTarget.style.background = "transparent"; }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ width: 16, height: 16 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+                Buscas
+              </Link>
+
+              <Link href="/favoritos" style={{
+                color: "rgba(255,255,255,0.6)", fontSize: "0.9rem", fontWeight: 600,
+                padding: "6px 12px", borderRadius: "10px", transition: "all 0.2s",
+                display: "flex", alignItems: "center", gap: "6px",
+              }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = "#ef4444"; e.currentTarget.style.background = "rgba(239,68,68,0.08)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = "rgba(255,255,255,0.6)"; e.currentTarget.style.background = "transparent"; }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ width: 16, height: 16 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                </svg>
+                Favoritos
+              </Link>
+            </>
           )}
 
           {/* Auth */}
@@ -108,6 +124,16 @@ export function Header() {
                       {session.user?.email}
                     </div>
                   </div>
+                  <Link href="/buscas-salvas" onClick={() => setMenuOpen(false)} style={{
+                    display: "flex", alignItems: "center", gap: "8px", padding: "10px 12px",
+                    borderRadius: "10px", color: "rgba(255,255,255,0.8)", fontSize: "0.9rem", fontWeight: 600,
+                    transition: "all 0.2s",
+                  }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                  >
+                    🔔 Minhas Buscas
+                  </Link>
                   <Link href="/favoritos" onClick={() => setMenuOpen(false)} style={{
                     display: "flex", alignItems: "center", gap: "8px", padding: "10px 12px",
                     borderRadius: "10px", color: "rgba(255,255,255,0.8)", fontSize: "0.9rem", fontWeight: 600,

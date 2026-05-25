@@ -5,8 +5,10 @@ import { PropertyFilters } from "@/components/imoveis/filters";
 import { PropertyTable } from "@/components/imoveis/property-table";
 import { PropertyMap } from "@/components/imoveis/property-map";
 import { ViewToggle } from "@/components/imoveis/view-toggle";
+import { SaveSearchButton } from "@/components/imoveis/save-search-button";
 import { getLatestImportBatch, getPropertiesForMap, getPropertyFilterOptions, getPropertyList, getPropertySummary, hasActiveFilters, normalizeFilters } from "@/lib/auction-items";
 import { buildPageHref, formatCurrency } from "@/lib/format";
+import { auth } from "@/lib/auth";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -35,12 +37,13 @@ export default async function PropertiesPage({
 
   const view: "list" | "map" = getSingleValue(resolvedSearchParams.view) === "map" ? "map" : "list";
 
-  const [options, result, summary, latestBatch, mapData] = await Promise.all([
+  const [options, result, summary, latestBatch, mapData, session] = await Promise.all([
     getPropertyFilterOptions(),
     getPropertyList(filters),
     getPropertySummary(filters),
     getLatestImportBatch(),
     view === "map" ? getPropertiesForMap(filters) : Promise.resolve(null),
+    auth(),
   ]);
 
   const normalizedFilters = normalizeFilters(filters);
@@ -139,6 +142,8 @@ export default async function PropertiesPage({
           filters={normalizedFilters}
           saleModes={options.saleModes}
         />
+
+        <SaveSearchButton filters={normalizedFilters} loggedIn={Boolean(session?.user)} />
 
         <section className="panel">
           <div className="panel-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
