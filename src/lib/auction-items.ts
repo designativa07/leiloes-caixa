@@ -202,3 +202,62 @@ export async function getLatestImportBatch() {
     orderBy: { createdAt: "desc" },
   });
 }
+
+const MAP_HARD_LIMIT = 2000;
+
+export type MapProperty = {
+  id: number;
+  externalId: string;
+  address: string;
+  city: string;
+  price: number;
+  discountPercent: number | null;
+  latitude: number;
+  longitude: number;
+};
+
+export async function getPropertiesForMap(filters: PropertyListFilters): Promise<{ items: MapProperty[]; truncated: boolean; totalWithCoords: number }> {
+  const baseWhere = buildAuctionItemWhere(filters);
+  const where = {
+    AND: [
+      ...(Array.isArray((baseWhere as { AND?: unknown[] }).AND) ? (baseWhere as { AND: unknown[] }).AND : [baseWhere]),
+      { latitude: { not: null } },
+      { longitude: { not: null } },
+    ],
+  } as Prisma.AuctionItemWhereInput;
+
+  const [rows, totalWithCoords] = await Promise.all([
+    db.auctionItem.findMany({
+      where,
+      select: {
+        id: true,
+        externalId: true,
+        address: true,
+        city: true,
+        price: true,
+        discountPercent: true,
+        latitude: true,
+        longitude: true,
+      },
+      take: MAP_HARD_LIMIT,
+    }),
+    db.auctionItem.count({ where }),
+  ]);
+
+  const items: MapProperty[] = rows.map((r) => ({
+    id: r.id,
+    externalId: r.externalId,
+    address: r.address,
+    city: r.city,
+    price: Number(r.price),
+    discountPercent: r.discountPercent ? Number(r.discountPercent) : null,
+    latitude: r.latitude!,
+    longitude: r.longitude!,
+  }));
+
+  return {
+    items,
+    truncated: totalWithCoords > MAP_HARD_LIMIT,
+    totalWithCoords,
+  };
+}
