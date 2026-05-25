@@ -7,9 +7,16 @@ export type AuctionInfo = { date: Date | null; type: string | null };
 
 function buildDate(match: RegExpMatchArray): Date {
   const [, day, month, year, hour, minute] = match;
-  const h = hour ?? "00";
-  const m = minute ?? "00";
-  return new Date(`${year}-${month}-${day}T${h.padStart(2, "0")}:${m.padStart(2, "0")}:00`);
+  const h = parseInt(hour ?? "00", 10);
+  const m = parseInt(minute ?? "00", 10);
+  return new Date(Date.UTC(
+    parseInt(year, 10),
+    parseInt(month, 10) - 1,
+    parseInt(day, 10),
+    h,
+    m,
+    0,
+  ));
 }
 
 export function extractAuctionInfo(html: string, now: Date = new Date()): AuctionInfo {

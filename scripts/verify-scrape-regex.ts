@@ -30,10 +30,7 @@ for (const s of samples) {
   const result = extractAuctionInfo(s.html, fixedNow);
   // Comparamos em UTC; o construtor `new Date('YYYY-MM-DDTHH:mm:ss')` interpreta como horário local,
   // então o ISO virá com offset. Para o teste, usamos um Date fixo construído via UTC e comparamos a string ISO.
-  const dateISO = result.date ? new Date(Date.UTC(
-    result.date.getFullYear(), result.date.getMonth(), result.date.getDate(),
-    result.date.getHours(), result.date.getMinutes(), result.date.getSeconds()
-  )).toISOString() : null;
+  const dateISO = result.date?.toISOString() ?? null;
   if (dateISO !== s.expected.dateISO || result.type !== s.expected.type) {
     console.error(`FAIL [${s.name}]: esperado ${JSON.stringify(s.expected)}, recebido { dateISO: ${dateISO}, type: ${result.type} }`);
     failures++;
