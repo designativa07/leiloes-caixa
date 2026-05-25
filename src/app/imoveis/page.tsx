@@ -3,7 +3,9 @@ import Link from "next/link";
 import { PropertyCard } from "@/components/imoveis/property-card";
 import { PropertyFilters } from "@/components/imoveis/filters";
 import { PropertyTable } from "@/components/imoveis/property-table";
-import { getLatestImportBatch, getPropertyFilterOptions, getPropertyList, getPropertySummary, hasActiveFilters, normalizeFilters } from "@/lib/auction-items";
+import { PropertyMap } from "@/components/imoveis/property-map";
+import { ViewToggle } from "@/components/imoveis/view-toggle";
+import { getLatestImportBatch, getPropertiesForMap, getPropertyFilterOptions, getPropertyList, getPropertySummary, hasActiveFilters, normalizeFilters } from "@/lib/auction-items";
 import { buildPageHref, formatCurrency } from "@/lib/format";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -31,11 +33,14 @@ export default async function PropertiesPage({
     page: getSingleValue(resolvedSearchParams.page),
   };
 
-  const [options, result, summary, latestBatch] = await Promise.all([
+  const view: "list" | "map" = getSingleValue(resolvedSearchParams.view) === "map" ? "map" : "list";
+
+  const [options, result, summary, latestBatch, mapData] = await Promise.all([
     getPropertyFilterOptions(),
     getPropertyList(filters),
     getPropertySummary(filters),
     getLatestImportBatch(),
+    view === "map" ? getPropertiesForMap(filters) : Promise.resolve(null),
   ]);
 
   const normalizedFilters = normalizeFilters(filters);
@@ -87,6 +92,17 @@ export default async function PropertiesPage({
     });
   };
 
+  const toggleFilters: Record<string, string | undefined> = {
+    search: normalizedFilters.search || undefined,
+    state: normalizedFilters.state || undefined,
+    city: normalizedFilters.city || undefined,
+    saleMode: normalizedFilters.saleMode || undefined,
+    financing: normalizedFilters.financing || undefined,
+    minPrice: normalizedFilters.minPrice || undefined,
+    maxPrice: normalizedFilters.maxPrice || undefined,
+    sort: normalizedFilters.sort || undefined,
+  };
+
   return (
     <main className="page-shell">
       <div className="container">
@@ -125,16 +141,19 @@ export default async function PropertiesPage({
         />
 
         <section className="panel">
-          <div className="panel-header">
+          <div className="panel-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
             <div>
               <h2 className="section-title">Resultados</h2>
               <div className="muted">
-                {result.total} imoveis encontrados. Pagina {result.page} de {result.totalPages}.
+                {result.total} imoveis encontrados. {view === "list" && `Pagina ${result.page} de ${result.totalPages}.`}
               </div>
             </div>
+            <ViewToggle currentView={view} filters={toggleFilters} />
           </div>
 
-          {result.items.length === 0 ? (
+          {view === "map" && mapData ? (
+            <PropertyMap items={mapData.items} truncated={mapData.truncated} totalWithCoords={mapData.totalWithCoords} />
+          ) : result.items.length === 0 ? (
             <div className="muted">Nenhum imovel encontrado com os filtros atuais.</div>
           ) : (
             <>
