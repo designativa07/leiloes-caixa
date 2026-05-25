@@ -43,3 +43,26 @@ export function getPropertyImage(externalId: string): string {
   const paddedId = cleanedId.padStart(13, "0");
   return `https://venda-imoveis.caixa.gov.br/fotos/F${paddedId}21.jpg`;
 }
+
+const AUCTION_TYPE_LABELS: Record<string, string> = {
+  leilao_1praca: "1ª Praça",
+  leilao_2praca: "2ª Praça",
+  licitacao_fim: "Fim das propostas",
+  continua: "Contínua",
+};
+
+export function formatAuctionDate(
+  date: Date | null,
+  type: string | null,
+): { primary: string; secondary?: string; kind: "date" | "continua" | "none" } {
+  if (type === "continua") {
+    return { primary: "Contínua", kind: "continua" };
+  }
+  if (!date || !type) {
+    return { primary: "-", kind: "none" };
+  }
+  const d = new Date(date);
+  const primary = d.toLocaleDateString("pt-BR", { timeZone: "UTC" });
+  const secondary = AUCTION_TYPE_LABELS[type] ?? type;
+  return { primary, secondary, kind: "date" };
+}

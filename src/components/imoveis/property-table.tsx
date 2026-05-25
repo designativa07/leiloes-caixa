@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { AuctionItem } from "@/generated/prisma/client";
 
-import { buildPageHref, formatCurrency, formatFinancing, formatPercent, getPropertyImage } from "@/lib/format";
+import { buildPageHref, formatAuctionDate, formatCurrency, formatFinancing, formatPercent, getPropertyImage } from "@/lib/format";
 import { PropertyImage } from "@/components/imoveis/property-image";
 
 type PropertyTableProps = {
@@ -64,6 +64,7 @@ export function PropertyTable({ items, filters }: PropertyTableProps) {
             </th>
             <th>Financia</th>
             <th>Modalidade</th>
+            <th>Data</th>
             <th></th>
           </tr>
         </thead>
@@ -97,6 +98,24 @@ export function PropertyTable({ items, filters }: PropertyTableProps) {
               <td>{formatPercent(Number(item.discountPercent ?? 0))}</td>
               <td>{formatFinancing(item.allowsFinancing)}</td>
               <td>{item.saleMode}</td>
+              <td>
+                {(() => {
+                  const auction = formatAuctionDate(item.auctionDate, item.auctionDateType);
+                  if (auction.kind === "continua") {
+                    return (
+                      <span style={{ background: "rgba(34,197,94,0.15)", color: "#22c55e", padding: "3px 10px", borderRadius: "8px", fontSize: "0.75rem", fontWeight: 700 }}>
+                        Contínua
+                      </span>
+                    );
+                  }
+                  return (
+                    <>
+                      <strong style={{ fontSize: "0.9rem" }}>{auction.primary}</strong>
+                      {auction.secondary && <div className="muted" style={{ fontSize: "0.75rem" }}>{auction.secondary}</div>}
+                    </>
+                  );
+                })()}
+              </td>
               <td>
                 <Link className="filters-clear" href={`/imoveis/${item.id}`}>
                   Detalhes

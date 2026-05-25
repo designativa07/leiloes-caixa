@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { AuctionItem } from "@/generated/prisma/client";
 
-import { formatCurrency, formatFinancing, formatPercent, getPropertyImage } from "@/lib/format";
+import { formatAuctionDate, formatCurrency, formatFinancing, formatPercent, getPropertyImage } from "@/lib/format";
 import { PropertyImage } from "@/components/imoveis/property-image";
 
 type PropertyCardProps = {
@@ -49,6 +49,19 @@ export function PropertyCard({ item }: PropertyCardProps) {
           <div>
             <span className="muted font-small">Modalidade:</span> <span className="font-small">{item.saleMode}</span>
           </div>
+          {(() => {
+            const auction = formatAuctionDate(item.auctionDate, item.auctionDateType);
+            if (auction.kind === "none") return null;
+            return (
+              <div>
+                <span className="muted font-small">Leilão:</span>{" "}
+                <span className="font-small">
+                  {auction.primary}
+                  {auction.secondary && ` (${auction.secondary})`}
+                </span>
+              </div>
+            );
+          })()}
         </div>
 
         <Link className="card-link" href={`/imoveis/${item.id}`}>
