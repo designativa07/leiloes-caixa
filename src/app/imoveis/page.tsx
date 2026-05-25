@@ -94,7 +94,7 @@ export default async function PropertiesPage({
           <span className="badge">Caixa Econômica Federal</span>
           {latestBatch && (
             <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.4)", marginTop: 8 }}>
-              Listagem atualizada em {new Date(latestBatch.generatedAt).toLocaleDateString("pt-BR")}
+              Listagem atualizada em {new Date(latestBatch.generatedAt).toLocaleDateString("pt-BR", { timeZone: "UTC" })}
             </div>
           )}
           <h1>Painel de Oportunidades Caixa</h1>
