@@ -79,14 +79,27 @@ model Favorite {
 }
 
 model SavedSearch {
-  id        Int      @id @default(autoincrement())
-  userId    String   @map("user_id")
-  name      String
-  filters   Json
-  createdAt DateTime @default(now()) @map("created_at")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             Int               @id @default(autoincrement())
+  userId         String            @map("user_id")
+  name           String
+  filters        Json
+  createdAt      DateTime          @default(now()) @map("created_at")
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  seenProperties SavedSearchSeen[]
 
   @@map("saved_searches")
+}
+
+model SavedSearchSeen {
+  id            Int         @id @default(autoincrement())
+  savedSearchId Int         @map("saved_search_id")
+  externalId    String      @map("external_id")
+  firstSeenAt   DateTime    @default(now()) @map("first_seen_at")
+  savedSearch   SavedSearch @relation(fields: [savedSearchId], references: [id], onDelete: Cascade)
+
+  @@unique([savedSearchId, externalId])
+  @@index([savedSearchId])
+  @@map("saved_search_seen")
 }
 
 model AuctionItem {
