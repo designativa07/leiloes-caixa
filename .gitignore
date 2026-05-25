@@ -23,3 +23,8 @@ build/
 /src/generated/prisma
 /generated/prisma
 
+# TypeScript incremental build cache
+tsconfig.tsbuildinfo
+
+# Claude Code state
+.claude/
