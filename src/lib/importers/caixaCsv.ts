@@ -7,7 +7,9 @@ const GENERATED_AT_REGEX = /Data de gera[çc][ãa]o[^0-9]*?(\d{2})\/(\d{2})\/(\d
 function parseGeneratedAt(headerLine: string): Date {
   const match = headerLine.match(GENERATED_AT_REGEX);
   if (!match) {
-    throw new Error(`Cabecalho do CSV nao contem 'Data de geracao': ${headerLine.slice(0, 100)}`);
+    throw new Error(
+      `Cabecalho do CSV nao contem 'Data de geracao'. Linha recebida (300 chars): "${headerLine.slice(0, 300)}"`,
+    );
   }
   const [, day, month, year] = match;
   return new Date(`${year}-${month}-${day}T00:00:00.000Z`);

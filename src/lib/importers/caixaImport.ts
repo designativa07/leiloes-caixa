@@ -14,13 +14,36 @@ export async function replaceCaixaAuctionItemsFromContent(fileContent: string) {
 }
 
 export async function replaceCaixaAuctionItemsFromUrl(url: string) {
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+      "Accept": "text/csv, application/csv, text/plain, */*",
+      "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
+    },
+  });
+
   if (!response.ok) {
     throw new Error(`Erro ao baixar a lista da Caixa: ${response.statusText} (${response.status})`);
   }
+
   const arrayBuffer = await response.arrayBuffer();
   const decoder = new TextDecoder("iso-8859-1");
   const fileContent = decoder.decode(arrayBuffer);
+
+  if (fileContent.length < 5000) {
+    throw new Error(
+      `Resposta inesperada da Caixa (${fileContent.length} bytes recebidos). ` +
+      `CSV deveria ter ~5MB. Primeiros 300 chars: "${fileContent.slice(0, 300)}"`,
+    );
+  }
+
+  if (fileContent.includes("Radware") || /captcha/i.test(fileContent)) {
+    throw new Error(
+      "Caixa retornou bot challenge (Radware/CAPTCHA). " +
+      "IP do servidor de producao bloqueado — considere usar proxy ou rodar import via cron local.",
+    );
+  }
+
   return replaceCaixaAuctionItemsFromContent(fileContent);
 }
 
