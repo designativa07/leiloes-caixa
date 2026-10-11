@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
-import { replaceCaixaAuctionItemsFromContent } from "@/lib/importers/caixaImport";
+import { decodeCaixaBuffer, replaceCaixaAuctionItemsFromContent } from "@/lib/importers/caixaImport";
 
 function buildAdminRedirect(request: Request, search: string) {
   return NextResponse.redirect(new URL(`/admin${search}`, request.url), 303);
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
       return buildAdminRedirect(request, "?status=error");
     }
 
-    const content = await file.text();
+    const content = decodeCaixaBuffer(await file.arrayBuffer());
     const result = await replaceCaixaAuctionItemsFromContent(content);
 
     revalidatePath("/");

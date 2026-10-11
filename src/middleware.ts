@@ -7,5 +7,5 @@ const { auth } = NextAuth(authConfig);
 export default auth;
 
 export const config = {
-  matcher: ["/favoritos/:path*"],
+  matcher: ["/favoritos/:path*", "/admin/:path*"],
 };

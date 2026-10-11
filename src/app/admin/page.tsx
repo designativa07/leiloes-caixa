@@ -96,8 +96,8 @@ export default async function AdminPage({
 
             <form action="/admin/import" encType="multipart/form-data" method="post" style={{ borderTop: "1px solid var(--border)", paddingTop: 20 }}>
               <div className="field">
-                <label htmlFor="csvFile">Enviar arquivo CSV manualmente (Upload)</label>
-                <input accept=".csv,text/csv" id="csvFile" name="csvFile" type="file" />
+                <label htmlFor="csvFile">Enviar arquivo da Caixa (.csv ou .txt)</label>
+                <input accept=".csv,.txt,text/csv,text/plain" id="csvFile" name="csvFile" type="file" />
               </div>
 
               <div className="filters-actions">

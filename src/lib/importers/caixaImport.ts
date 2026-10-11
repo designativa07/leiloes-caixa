@@ -2,6 +2,16 @@ import { db } from "@/lib/db";
 import { parseCaixaCsvContent, parseCaixaCsvFile } from "@/lib/importers/caixaCsv";
 import { buildAuctionItemWhere } from "@/lib/auction-items";
 import { sendAlertEmail } from "@/lib/email";
+import { geocodePendingItems, markContinuousSales } from "@/lib/importers/enrich";
+
+// A Caixa publica em ISO-8859-1; arquivos reabertos/salvos em editor viram UTF-8.
+export function decodeCaixaBuffer(buffer: ArrayBuffer | Uint8Array): string {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(buffer).replace(/^﻿/, "");
+  } catch {
+    return new TextDecoder("iso-8859-1").decode(buffer);
+  }
+}
 
 export async function replaceCaixaAuctionItemsFromFile(filePath: string) {
   const parsed = await parseCaixaCsvFile(filePath);
@@ -26,9 +36,7 @@ export async function replaceCaixaAuctionItemsFromUrl(url: string) {
     throw new Error(`Erro ao baixar a lista da Caixa: ${response.statusText} (${response.status})`);
   }
 
-  const arrayBuffer = await response.arrayBuffer();
-  const decoder = new TextDecoder("iso-8859-1");
-  const fileContent = decoder.decode(arrayBuffer);
+  const fileContent = decodeCaixaBuffer(await response.arrayBuffer());
 
   if (fileContent.length < 5000) {
     throw new Error(
@@ -47,34 +55,94 @@ export async function replaceCaixaAuctionItemsFromUrl(url: string) {
   return replaceCaixaAuctionItemsFromContent(fileContent);
 }
 
+type ParsedItem = Awaited<ReturnType<typeof parseCaixaCsvFile>>["items"][number];
+
+const CHANGE_FIELDS = [
+  "state", "city", "district", "address", "price", "appraisalValue", "discountPercent",
+  "allowsFinancing", "description", "saleMode", "sourceUrl",
+] as const;
+
+function hasChanged(existing: Record<string, unknown>, item: ParsedItem) {
+  return CHANGE_FIELDS.some((f) => String(existing[f] ?? "") !== String(item[f] ?? ""));
+}
+
+// Sincroniza em vez de apagar+recriar: preserva ids (favoritos), coordenadas e datas.
 async function replaceCaixaAuctionItems(
-  parsed: { generatedAt: Date; items: Awaited<ReturnType<typeof parseCaixaCsvFile>>["items"] },
+  parsed: { generatedAt: Date; items: ParsedItem[] },
 ) {
   const { generatedAt, items } = parsed;
-  const importBatch = `caixa-import-${new Date().toISOString()}`;
 
-  await db.auctionItem.deleteMany({
-    where: { source: "caixa", category: "imovel" },
+  if (items.length === 0) {
+    throw new Error("Arquivo sem nenhum imovel — importacao cancelada para nao apagar a base.");
+  }
+
+  const importBatch = `caixa-import-${new Date().toISOString()}`;
+  const where = { source: "caixa", category: "imovel" };
+
+  const existingRows = await db.auctionItem.findMany({ where });
+  const existing = new Map(existingRows.map((r) => [r.externalId, r]));
+  const incomingIds = new Set(items.map((i) => i.externalId));
+
+  const toCreate = items.filter((i) => !existing.has(i.externalId));
+  const toUpdate = items.filter((i) => {
+    const row = existing.get(i.externalId);
+    return row && hasChanged(row, i);
   });
+  const removedIds = existingRows.filter((r) => !incomingIds.has(r.externalId)).map((r) => r.id);
 
   const chunkSize = 500;
-  let totalInserted = 0;
 
-  for (let i = 0; i < items.length; i += chunkSize) {
-    const chunk = items.slice(i, i + chunkSize);
+  for (let i = 0; i < toCreate.length; i += chunkSize) {
     await db.auctionItem.createMany({
-      data: chunk.map((item) => ({ ...item, importBatch })),
+      data: toCreate.slice(i, i + chunkSize).map((item) => ({ ...item, importBatch })),
+      skipDuplicates: true,
     });
-    totalInserted += chunk.length;
+  }
+
+  for (let i = 0; i < toUpdate.length; i += 100) {
+    await db.$transaction(
+      toUpdate.slice(i, i + 100).map((item) => {
+        const row = existing.get(item.externalId)!;
+        // Cidade/modalidade mudou: coordenadas e data continua precisam ser recalculadas.
+        const reset =
+          row.city !== item.city || row.state !== item.state || row.saleMode !== item.saleMode
+            ? { latitude: null, longitude: null, geocodedAt: null, auctionDateType: null, scrapedAt: null }
+            : {};
+        return db.auctionItem.update({
+          where: { id: row.id },
+          data: { ...item, ...reset, importBatch },
+        });
+      }),
+    );
+  }
+
+  // Itens inalterados: apenas carimba o lote atual.
+  const touchedIds = new Set(toUpdate.map((i) => i.externalId));
+  const unchangedIds = items
+    .filter((i) => existing.has(i.externalId) && !touchedIds.has(i.externalId))
+    .map((i) => i.externalId);
+  for (let i = 0; i < unchangedIds.length; i += 5000) {
+    await db.auctionItem.updateMany({
+      where: { ...where, externalId: { in: unchangedIds.slice(i, i + 5000) } },
+      data: { importBatch },
+    });
+  }
+
+  for (let i = 0; i < removedIds.length; i += 5000) {
+    await db.auctionItem.deleteMany({ where: { id: { in: removedIds.slice(i, i + 5000) } } });
   }
 
   await db.importBatch.create({
-    data: {
-      source: "caixa",
-      generatedAt,
-      itemCount: totalInserted,
-    },
+    data: { source: "caixa", generatedAt, itemCount: items.length },
   });
+
+  const enrichment: { geocode?: Awaited<ReturnType<typeof geocodePendingItems>> } = {};
+  try {
+    enrichment.geocode = await geocodePendingItems();
+    await markContinuousSales();
+  } catch (err) {
+    console.error("Enriquecimento (geocode/continua) falhou (non-fatal):", err);
+  }
 
   try {
     await sendEmailAlerts();
@@ -82,7 +150,15 @@ async function replaceCaixaAuctionItems(
     console.error("Email alerts failed (non-fatal):", err);
   }
 
-  return { count: totalInserted, importBatch, generatedAt };
+  return {
+    count: items.length,
+    created: toCreate.length,
+    updated: toUpdate.length,
+    removed: removedIds.length,
+    importBatch,
+    generatedAt,
+    enrichment,
+  };
 }
 
 async function sendEmailAlerts() {
