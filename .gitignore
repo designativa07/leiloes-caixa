@@ -28,3 +28,6 @@ tsconfig.tsbuildinfo
 
 # Claude Code state
 .claude/
+
+# Lista da Caixa baixada manualmente (7MB, nao versionar)
+Lista_imoveis_geral.csv

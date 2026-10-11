@@ -66,11 +66,7 @@ export default async function AdminPage({
             {status === "success" ? (
               <div className="status-success">
                 Importacao concluida com {importedCount} imoveis via{" "}
-                {source === "upload"
-                  ? "upload de arquivo"
-                  : source === "download"
-                    ? "download online (Caixa Geral)"
-                    : "arquivo padrao local"}.
+                {source === "upload" ? "upload de arquivo" : "arquivo padrao local"}.
               </div>
             ) : status === "error" ? (
               <div className="status-info">
@@ -85,14 +81,6 @@ export default async function AdminPage({
                 Nenhuma importacao executada nesta sessao. Use os controles abaixo para atualizar a base.
               </div>
             )}
-
-            <form action="/admin/download" method="post" style={{ marginBottom: 20 }}>
-              <div className="filters-actions">
-                <button className="filters-submit" type="submit" style={{ width: "100%", padding: "14px", fontSize: "1rem" }}>
-                  Baixar e Importar Lista Atualizada da Caixa (Online)
-                </button>
-              </div>
-            </form>
 
             <div style={{ marginBottom: 20 }}>
               <a
