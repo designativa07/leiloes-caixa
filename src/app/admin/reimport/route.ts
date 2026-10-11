@@ -6,7 +6,8 @@ import { NextResponse } from "next/server";
 import { replaceCaixaAuctionItemsFromFile } from "@/lib/importers/caixaImport";
 
 function buildAdminRedirect(request: Request, search: string) {
-  return NextResponse.redirect(new URL(`/admin${search}`, request.url), 303);
+  // Redirect relativo: atras do proxy do Coolify request.url aponta para localhost:3000.
+  return new NextResponse(null, { status: 303, headers: { Location: `/admin${search}` } });
 }
 
 export async function POST(request: Request) {

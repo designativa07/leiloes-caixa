@@ -116,10 +116,21 @@ export function parseCaixaCsvContent(fileContent: string): { generatedAt: Date; 
     skip_empty_lines: false,
   }) as string[][];
 
-  const firstLine = rows[0]?.join(";") ?? "";
-  const generatedAt = parseGeneratedAt(firstLine);
+  // O layout da Caixa varia (linhas em branco no topo): localiza o cabecalho pelo conteudo.
+  const headerIndex = rows.findIndex((row) => {
+    const cells = row.map((c) => normalizeText(c ?? "").toLowerCase());
+    return cells.includes("uf") && cells.includes("cidade");
+  });
+  if (headerIndex === -1) {
+    throw new Error(
+      "Cabecalho de colunas (UF; Cidade; ...) nao encontrado. O arquivo e a lista de imoveis da Caixa?",
+    );
+  }
 
-  const dataRows = rows.slice(3).filter((row) => row.some((cell) => normalizeText(cell ?? "") !== ""));
+  const preamble = rows.slice(0, headerIndex).map((r) => r.join(";")).join(" ");
+  const generatedAt = parseGeneratedAt(preamble);
+
+  const dataRows = rows.slice(headerIndex + 1).filter((row) => row.some((cell) => normalizeText(cell ?? "") !== ""));
 
   const items = dataRows.map((row, index) => {
     const record = Object.fromEntries(
@@ -132,7 +143,7 @@ export function parseCaixaCsvContent(fileContent: string): { generatedAt: Date; 
       const issue = validation.error.issues[0];
       const fieldName = String(issue?.path?.[0] ?? "desconhecido");
       const fieldLabel = fieldLabels[fieldName] ?? fieldName;
-      throw new Error(`Linha ${index + 4} invalida: campo "${fieldLabel}" ausente ou invalido.`);
+      throw new Error(`Linha ${index + headerIndex + 2} invalida: campo "${fieldLabel}" ausente ou invalido.`);
     }
 
     const validated = validation.data;
