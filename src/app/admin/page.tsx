@@ -94,9 +94,23 @@ export default async function AdminPage({
               </div>
             </form>
 
+            <div style={{ marginBottom: 20 }}>
+              <a
+                className="button-secondary"
+                href="https://venda-imoveis.caixa.gov.br/listaweb/Lista_imoveis_geral.csv"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                1. Baixar lista geral da Caixa (Lista_imoveis_geral.csv)
+              </a>
+              <div className="muted" style={{ marginTop: 6 }}>
+                Salve o arquivo e envie abaixo. Use sempre a lista geral (todos os estados).
+              </div>
+            </div>
+
             <form action="/admin/import" encType="multipart/form-data" method="post" style={{ borderTop: "1px solid var(--border)", paddingTop: 20 }}>
               <div className="field">
-                <label htmlFor="csvFile">Enviar arquivo da Caixa (.csv ou .txt)</label>
+                <label htmlFor="csvFile">2. Enviar o arquivo baixado (.csv ou .txt)</label>
                 <input accept=".csv,.txt,text/csv,text/plain" id="csvFile" name="csvFile" type="file" />
               </div>
 
